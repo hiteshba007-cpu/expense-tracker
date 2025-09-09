@@ -1,0 +1,86 @@
+3
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Expense Tracker - Reports</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="profile">
+      <img src="https://i.ibb.co/ZYdkVZJ/user.png" alt="Profile">
+      <h3>Hitesh</h3>
+      <p>Finance Enthusiast</p>
+    </div>
+
+    <nav class="menu">
+      <a href="index.html"><i class="fa fa-home"></i> Home</a>
+      <a href="tracker.html"><i class="fa fa-pen"></i> Tracker</a>
+      <a href="reports.html" class="active"><i class="fa fa-chart-pie"></i> Reports</a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <a href="#"><i class="fa fa-cog"></i> Settings</a>
+      <a href="#"><i class="fa fa-sign-out-alt"></i> Logout</a>
+    </div>
+  </aside>
+
+  <main class="content">
+    <section class="card">
+      <h3>Monthly Report</h3>
+      <canvas id="pieChart" width="350" height="350"></canvas>
+      <p><b>Income:</b> <span id="income-total"></span></p>
+      <p><b>Expense:</b> <span id="expense-total"></span></p>
+      <h4>By Category</h4>
+      <ul id="by-category"></ul>
+    </section>
+  </main>
+
+  <script>
+    const incomeEl = document.getElementById("income-total");
+    const expenseEl = document.getElementById("expense-total");
+    const byCatEl = document.getElementById("by-category");
+    const pieCtx = document.getElementById("pieChart").getContext("2d");
+    let pieChart;
+
+    function loadTx() { return JSON.parse(localStorage.getItem("transactions") || "[]"); }
+
+    function renderReport() {
+      const txs = loadTx();
+      const d = new Date();
+      const ym = d.toISOString().slice(0,7);
+      const monthTxs = txs.filter(t => t.date.startsWith(ym));
+
+      let income=0, expense=0; const byCat={};
+      monthTxs.forEach(t=>{
+        if (t.type==="income") income+=t.amount;
+        else { expense+=t.amount; byCat[t.category]=(byCat[t.category]||0)+t.amount; }
+      });
+
+      incomeEl.textContent = income.toFixed(2);
+      expenseEl.textContent = expense.toFixed(2);
+      byCatEl.innerHTML = "";
+      Object.entries(byCat).forEach(([c,a])=>{
+        const li=document.createElement("li");
+        li.textContent=${c}: ${a.toFixed(2)};
+        byCatEl.appendChild(li);
+      });
+
+      if (pieChart) pieChart.destroy();
+      pieChart = new Chart(pieCtx, {
+        type:"doughnut",
+        data:{ labels:Object.keys(byCat),
+               datasets:[{ data:Object.values(byCat),
+               backgroundColor:["#ff7675","#74b9ff","#55efc4","#ffeaa7","#a29bfe","#fd79a8"],
+               borderWidth:2, borderColor:"#fff" }] },
+        options:{ animation:{ animateRotate:true, animateScale:true }, cutout:"60%" }
+      });
+    }
+
+    renderReport();
+  </script>
+</body>
+</html>
